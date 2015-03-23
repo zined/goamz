@@ -97,6 +97,27 @@ func (c *CloudWatchLogs) query(method, path string, params map[string]string, re
 	return err
 }
 
+func (c *CloudWatchLogs) DeleteMetricFilter(logGroup *LogGroup, metricFilter *MetricFilter) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("DeleteMetricFilter")
+
+	switch {
+	case logGroup.LogGroupName == "":
+		err = errors.New("No LogGroupName supplied")
+	case metricFilter.FilterName == "":
+		err = errors.New("No FilterName supplied")
+	}
+	if err != nil {
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+	params["FilterName"] = metricFilter.FilterName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
 func (c *CloudWatchLogs) PutMetricFilter(logGroup *LogGroup, metricFilter *MetricFilter) (result *aws.BaseResponse, err error) {
 	params := aws.MakeParams("PutMetricFilter")
 

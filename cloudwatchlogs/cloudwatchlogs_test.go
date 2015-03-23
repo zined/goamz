@@ -64,6 +64,23 @@ func getSomeTestMetricFilter() *cloudwatchlogs.MetricFilter {
 	return metricFilter
 }
 
+func (s *S) TestDeleteMetricFilter(c *C) {
+	testServer.Response(200, nil, "<RequestId>123</RequestId>")
+
+	logGroup := getSomeTestLogGroup()
+	metricFilter := getSomeTestMetricFilter()
+
+	_, err := s.cwl.DeleteMetricFilter(logGroup, metricFilter)
+	c.Assert(err, IsNil)
+
+	req := testServer.WaitRequest()
+	c.Assert(req.Method, Equals, "POST")
+	c.Assert(req.URL.Path, Equals, "/")
+	c.Assert(req.Form["Action"], DeepEquals, []string{"DeleteMetricFilter"})
+	c.Assert(req.Form["LogGroupName"], DeepEquals, []string{"someLogGroupName"})
+	c.Assert(req.Form["FilterName"], DeepEquals, []string{"someMetricFilterName"})
+}
+
 func (s *S) TestPutMetricFilter(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 

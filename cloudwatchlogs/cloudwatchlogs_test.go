@@ -32,13 +32,14 @@ func (s *S) TearDownTest(c *C) {
 	testServer.Flush()
 }
 
-func getTestLogGroup() *cloudwatchlogs.LogGroup {
+// TODO: add invalid entities to test proper validation?
+func getSomeTestLogGroup() *cloudwatchlogs.LogGroup {
 	logGroup := new(cloudwatchlogs.LogGroup)
 	logGroup.LogGroupName = "someLogGroupName"
 	return logGroup
 }
 
-func getTestLogStream() *cloudwatchlogs.LogStream {
+func getSomeTestLogStream() *cloudwatchlogs.LogStream {
 	logStream := new(cloudwatchlogs.LogStream)
 	logStream.LogStreamName = "someLogStreamName"
 	return logStream
@@ -47,8 +48,8 @@ func getTestLogStream() *cloudwatchlogs.LogStream {
 func (s *S) TestDeleteLogStream(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 
-	logGroup := getTestLogGroup()
-	logStream := getTestLogStream()
+	logGroup := getSomeTestLogGroup()
+	logStream := getSomeTestLogStream()
 
 	_, err := s.cwl.DeleteLogStream(logGroup, logStream)
 	c.Assert(err, IsNil)
@@ -64,7 +65,7 @@ func (s *S) TestDeleteLogStream(c *C) {
 func (s *S) TestDeleteLogGroup(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 
-	logGroup := getTestLogGroup()
+	logGroup := getSomeTestLogGroup()
 
 	_, err := s.cwl.DeleteLogGroup(logGroup)
 	c.Assert(err, IsNil)
@@ -79,7 +80,7 @@ func (s *S) TestDeleteLogGroup(c *C) {
 func (s *S) TestCreateLogGroup(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 
-	logGroup := getTestLogGroup()
+	logGroup := getSomeTestLogGroup()
 
 	_, err := s.cwl.CreateLogGroup(logGroup)
 	c.Assert(err, IsNil)
@@ -94,8 +95,8 @@ func (s *S) TestCreateLogGroup(c *C) {
 func (s *S) TestCreateLogStream(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 
-	logGroup := getTestLogGroup()
-	logStream := getTestLogStream()
+	logGroup := getSomeTestLogGroup()
+	logStream := getSomeTestLogStream()
 
 	_, err := s.cwl.CreateLogStream(logGroup, logStream)
 	c.Assert(err, IsNil)

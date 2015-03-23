@@ -3,6 +3,7 @@ package cloudwatchlogs
 import (
 	"encoding/xml"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/AdRoll/goamz/aws"
@@ -94,6 +95,39 @@ func (c *CloudWatchLogs) query(method, path string, params map[string]string, re
 	}
 	err = xml.NewDecoder(r.Body).Decode(resp)
 	return err
+}
+
+func (c *CloudWatchLogs) PutMetricFilter(logGroup *LogGroup, metricFilter *MetricFilter) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("PutMetricFilter")
+
+	switch {
+	case logGroup.LogGroupName == "":
+		err = errors.New("No LogGroupName supplied")
+	case metricFilter.FilterName == "":
+		err = errors.New("No FilterName supplied")
+	case metricFilter.FilterPattern == "":
+		err = errors.New("No FilterPattern supplied")
+	case len(metricFilter.MetricTransformations) < 1:
+		err = errors.New("No MetricTransformations supplied")
+	}
+	if err != nil {
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+	params["FilterName"] = metricFilter.FilterName
+	params["FilterPattern"] = metricFilter.FilterPattern
+
+	for i, d := range metricFilter.MetricTransformations {
+		prefix := "MetricTransformations.member." + strconv.Itoa(i+1)
+		params[prefix+".MetricName"] = d.MetricName
+		params[prefix+".MetricNamespace"] = d.MetricNamespace
+		params[prefix+".MetricValue"] = d.MetricValue
+	}
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
 }
 
 func (c *CloudWatchLogs) DeleteLogStream(logGroup *LogGroup, logStream *LogStream) (result *aws.BaseResponse, err error) {

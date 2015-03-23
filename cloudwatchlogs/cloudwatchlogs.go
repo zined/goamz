@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AdRoll/goamz/aws"
+	"github.com/feyeleanor/sets"
 )
 
 type CloudWatchLogs struct {
@@ -63,6 +64,26 @@ type OutputLogEvent struct {
 	Timestamp     time.Time
 }
 
+var validRetentionTimeInDays = sets.ISet(
+	1,
+	3,
+	5,
+	7,
+	14,
+	30,
+	60,
+	90,
+	120,
+	150,
+	180,
+	365,
+	400,
+	545,
+	731,
+	1827,
+	3653,
+)
+
 type RejectedLogEventsInfo struct {
 	ExpiredLogEventEndIndex  float64
 	TooNewLogEventStartIndex float64
@@ -97,6 +118,78 @@ func (c *CloudWatchLogs) query(method, path string, params map[string]string, re
 	return err
 }
 
+func (c *CloudWatchLogs) CreateLogGroup(logGroup *LogGroup) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("CreateLogGroup")
+
+	if logGroup.LogGroupName == "" {
+		err = errors.New("No LogGroupName supplied")
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
+func (c *CloudWatchLogs) CreateLogStream(logGroup *LogGroup, logStream *LogStream) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("CreateLogStream")
+
+	switch {
+	case logGroup.LogGroupName == "":
+		err = errors.New("No LogGroupName supplied")
+	case logStream.LogStreamName == "":
+		err = errors.New("No LogStreamName supplied")
+	}
+	if err != nil {
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+	params["LogStreamName"] = logStream.LogStreamName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
+func (c *CloudWatchLogs) DeleteLogGroup(logGroup *LogGroup) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("DeleteLogGroup")
+
+	if logGroup.LogGroupName == "" {
+		err = errors.New("No LogGroupName supplied")
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
+func (c *CloudWatchLogs) DeleteLogStream(logGroup *LogGroup, logStream *LogStream) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("DeleteLogStream")
+
+	switch {
+	case logGroup.LogGroupName == "":
+		err = errors.New("No LogGroupName supplied")
+	case logStream.LogStreamName == "":
+		err = errors.New("No LogStreamName supplied")
+	}
+	if err != nil {
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+	params["LogStreamName"] = logStream.LogStreamName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
 func (c *CloudWatchLogs) DeleteMetricFilter(logGroup *LogGroup, metricFilter *MetricFilter) (result *aws.BaseResponse, err error) {
 	params := aws.MakeParams("DeleteMetricFilter")
 
@@ -115,6 +208,41 @@ func (c *CloudWatchLogs) DeleteMetricFilter(logGroup *LogGroup, metricFilter *Me
 
 	result = new(aws.BaseResponse)
 	err = c.query("POST", "/", params, result)
+	return
+}
+
+func (c *CloudWatchLogs) DeleteRetentionPolicy(logGroup *LogGroup) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("DeleteRetentionPolicy")
+
+	if logGroup.LogGroupName == "" {
+		err = errors.New("No LogGroupName supplied")
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
+func (c *CloudWatchLogs) DescribeLogGroups(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
+	return
+}
+
+func (c *CloudWatchLogs) DescribeLogStreams(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
+	return
+}
+
+func (c *CloudWatchLogs) DescribeMetricFilters(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
+	return
+}
+
+func (c *CloudWatchLogs) GetLogEvents(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
+	return
+}
+
+func (c *CloudWatchLogs) PutLogEvents(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
 	return
 }
 
@@ -151,74 +279,27 @@ func (c *CloudWatchLogs) PutMetricFilter(logGroup *LogGroup, metricFilter *Metri
 	return
 }
 
-func (c *CloudWatchLogs) DeleteLogStream(logGroup *LogGroup, logStream *LogStream) (result *aws.BaseResponse, err error) {
-	params := aws.MakeParams("DeleteLogStream")
+func (c *CloudWatchLogs) PutRetentionPolicy(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("PutRetentionPolicy")
 
 	switch {
 	case logGroup.LogGroupName == "":
 		err = errors.New("No LogGroupName supplied")
-	case logStream.LogStreamName == "":
-		err = errors.New("No LogStreamName supplied")
+	case !validRetentionTimeInDays.Member(retentionInDays):
+		err = errors.New("RetentionInDays is not a valid value")
 	}
 	if err != nil {
 		return
 	}
 
 	params["LogGroupName"] = logGroup.LogGroupName
-	params["LogStreamName"] = logStream.LogStreamName
+	params["RetentionInDays"] = strconv.Itoa(retentionInDays)
 
 	result = new(aws.BaseResponse)
 	err = c.query("POST", "/", params, result)
 	return
 }
 
-func (c *CloudWatchLogs) DeleteLogGroup(logGroup *LogGroup) (result *aws.BaseResponse, err error) {
-	params := aws.MakeParams("DeleteLogGroup")
-
-	if logGroup.LogGroupName == "" {
-		err = errors.New("No LogGroupName supplied")
-		return
-	}
-
-	params["LogGroupName"] = logGroup.LogGroupName
-
-	result = new(aws.BaseResponse)
-	err = c.query("POST", "/", params, result)
-	return
-}
-
-func (c *CloudWatchLogs) CreateLogStream(logGroup *LogGroup, logStream *LogStream) (result *aws.BaseResponse, err error) {
-	params := aws.MakeParams("CreateLogStream")
-
-	switch {
-	case logGroup.LogGroupName == "":
-		err = errors.New("No LogGroupName supplied")
-	case logStream.LogStreamName == "":
-		err = errors.New("No LogStreamName supplied")
-	}
-	if err != nil {
-		return
-	}
-
-	params["LogGroupName"] = logGroup.LogGroupName
-	params["LogStreamName"] = logStream.LogStreamName
-
-	result = new(aws.BaseResponse)
-	err = c.query("POST", "/", params, result)
-	return
-}
-
-func (c *CloudWatchLogs) CreateLogGroup(logGroup *LogGroup) (result *aws.BaseResponse, err error) {
-	params := aws.MakeParams("CreateLogGroup")
-
-	if logGroup.LogGroupName == "" {
-		err = errors.New("No LogGroupName supplied")
-		return
-	}
-
-	params["LogGroupName"] = logGroup.LogGroupName
-
-	result = new(aws.BaseResponse)
-	err = c.query("POST", "/", params, result)
+func (c *CloudWatchLogs) TestMetricFilter(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
 	return
 }

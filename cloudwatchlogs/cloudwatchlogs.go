@@ -96,6 +96,27 @@ func (c *CloudWatchLogs) query(method, path string, params map[string]string, re
 	return err
 }
 
+func (c *CloudWatchLogs) DeleteLogStream(logGroup *LogGroup, logStream *LogStream) (result *aws.BaseResponse, err error) {
+	params := aws.MakeParams("DeleteLogStream")
+
+	switch {
+	case logGroup.LogGroupName == "":
+		err = errors.New("No LogGroupName supplied")
+	case logStream.LogStreamName == "":
+		err = errors.New("No LogStreamName supplied")
+	}
+	if err != nil {
+		return
+	}
+
+	params["LogGroupName"] = logGroup.LogGroupName
+	params["LogStreamName"] = logStream.LogStreamName
+
+	result = new(aws.BaseResponse)
+	err = c.query("POST", "/", params, result)
+	return
+}
+
 func (c *CloudWatchLogs) DeleteLogGroup(logGroup *LogGroup) (result *aws.BaseResponse, err error) {
 	params := aws.MakeParams("DeleteLogGroup")
 

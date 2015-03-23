@@ -44,6 +44,21 @@ func getTestLogStream() *cloudwatchlogs.LogStream {
 	return logStream
 }
 
+func (s *S) TestDeleteLogGroup(c *C) {
+	testServer.Response(200, nil, "<RequestId>123</RequestId>")
+
+	logGroup := getTestLogGroup()
+
+	_, err := s.cwl.DeleteLogGroup(logGroup)
+	c.Assert(err, IsNil)
+
+	req := testServer.WaitRequest()
+	c.Assert(req.Method, Equals, "POST")
+	c.Assert(req.URL.Path, Equals, "/")
+	c.Assert(req.Form["Action"], DeepEquals, []string{"DeleteLogGroup"})
+	c.Assert(req.Form["LogGroupName"], DeepEquals, []string{"someLogGroupName"})
+}
+
 func (s *S) TestCreateLogGroup(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 

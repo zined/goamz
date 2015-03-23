@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/goamz/goamz/aws"
+	"github.com/AdRoll/goamz/aws"
 )
 
 type CloudWatchLogs struct {

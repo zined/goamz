@@ -64,6 +64,28 @@ type OutputLogEvent struct {
 	Timestamp     time.Time
 }
 
+type RejectedLogEventsInfo struct {
+	ExpiredLogEventEndIndex  float64
+	TooNewLogEventStartIndex float64
+	TooOldLogEventEndIndex   float64
+}
+
+type DescribeLogGroupsRequest struct {
+	Limit              int
+	LogGroupNamePrefix string
+	NextToken          string
+}
+
+type DescribeLogGroupsResult struct {
+	LogGroups []LogGroup `xml:"LogGroups>member"`
+	NextToken string     `xml:"NextToken"`
+}
+
+type DescribeLogGroupsResponse struct {
+	DescribeLogGroupsResult DescribeLogGroupsResult
+	ResponseMetadata        aws.ResponseMetadata
+}
+
 var validRetentionTimeInDays = sets.ISet(
 	1,
 	3,
@@ -84,12 +106,6 @@ var validRetentionTimeInDays = sets.ISet(
 	3653,
 )
 
-type RejectedLogEventsInfo struct {
-	ExpiredLogEventEndIndex  float64
-	TooNewLogEventStartIndex float64
-	TooOldLogEventEndIndex   float64
-}
-
 func NewCloudWatchLogs(auth aws.Auth, region aws.ServiceInfo) (*CloudWatchLogs, error) {
 	service, err := aws.NewService(auth, region)
 	if err != nil {
@@ -98,7 +114,6 @@ func NewCloudWatchLogs(auth aws.Auth, region aws.ServiceInfo) (*CloudWatchLogs, 
 	return &CloudWatchLogs{
 		Service: service,
 	}, nil
-
 }
 
 func (c *CloudWatchLogs) query(method, path string, params map[string]string, resp interface{}) error {
@@ -226,7 +241,15 @@ func (c *CloudWatchLogs) DeleteRetentionPolicy(logGroup *LogGroup) (result *aws.
 	return
 }
 
-func (c *CloudWatchLogs) DescribeLogGroups(logGroup *LogGroup, retentionInDays int) (result *aws.BaseResponse, err error) {
+func (c *CloudWatchLogs) DescribeLogGroups(req *DescribeLogGroupsRequest) (result *DescribeLogGroupsResponse, err error) {
+	params := aws.MakeParams("DescribeLogGroups")
+
+	params["Limit"] = strconv.Itoa(req.Limit)
+	params["LogGroupNamePrefix"] = req.LogGroupNamePrefix
+	params["NextToken"] = req.NextToken
+
+	result = new(DescribeLogGroupsResponse)
+	err = c.query("POST", "/", params, result)
 	return
 }
 

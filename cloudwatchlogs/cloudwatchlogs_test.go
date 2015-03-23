@@ -65,6 +65,15 @@ func getSomeTestMetricFilter() *cloudwatchlogs.MetricFilter {
 	return metricFilter
 }
 
+func getSomeTestDescribeLogGroupsRequest() *cloudwatchlogs.DescribeLogGroupsRequest {
+	describeLogGroupsRequest := new(cloudwatchlogs.DescribeLogGroupsRequest)
+	describeLogGroupsRequest.Limit = 123
+	describeLogGroupsRequest.LogGroupNamePrefix = "someLogGroupNamePrefix"
+	describeLogGroupsRequest.NextToken = "someNextToken"
+
+	return describeLogGroupsRequest
+}
+
 func (s *S) TestCreateLogGroup(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 
@@ -163,6 +172,18 @@ func (s *S) TestDeleteRetentionPolicy(c *C) {
 
 func (s *S) TestDescribeLogGroups(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
+
+	describeLogGroupsRequest := getSomeTestDescribeLogGroupsRequest()
+
+	_, err := s.cwl.DescribeLogGroups(describeLogGroupsRequest)
+	c.Assert(err, IsNil)
+
+	req := testServer.WaitRequest()
+	c.Assert(req.Method, Equals, "POST")
+	c.Assert(req.URL.Path, Equals, "/")
+	c.Assert(req.Form["Limit"], DeepEquals, []string{"123"})
+	c.Assert(req.Form["LogGroupNamePrefix"], DeepEquals, []string{"someLogGroupNamePrefix"})
+	c.Assert(req.Form["NextToken"], DeepEquals, []string{"someNextToken"})
 }
 
 func (s *S) TestDescribeLogStreams(c *C) {

@@ -38,6 +38,12 @@ func getTestLogGroup() *cloudwatchlogs.LogGroup {
 	return logGroup
 }
 
+func getTestLogStream() *cloudwatchlogs.LogStream {
+	logStream := new(cloudwatchlogs.LogStream)
+	logStream.LogStreamName = "someLogStreamName"
+	return logStream
+}
+
 func (s *S) TestCreateLogGroup(c *C) {
 	testServer.Response(200, nil, "<RequestId>123</RequestId>")
 
@@ -51,4 +57,21 @@ func (s *S) TestCreateLogGroup(c *C) {
 	c.Assert(req.URL.Path, Equals, "/")
 	c.Assert(req.Form["Action"], DeepEquals, []string{"CreateLogGroup"})
 	c.Assert(req.Form["LogGroupName"], DeepEquals, []string{"someLogGroupName"})
+}
+
+func (s *S) TestCreateLogStream(c *C) {
+	testServer.Response(200, nil, "<RequestId>123</RequestId>")
+
+	logGroup := getTestLogGroup()
+	logStream := getTestLogStream()
+
+	_, err := s.cwl.CreateLogStream(logGroup, logStream)
+	c.Assert(err, IsNil)
+
+	req := testServer.WaitRequest()
+	c.Assert(req.Method, Equals, "POST")
+	c.Assert(req.URL.Path, Equals, "/")
+	c.Assert(req.Form["Action"], DeepEquals, []string{"CreateLogStream"})
+	c.Assert(req.Form["LogGroupName"], DeepEquals, []string{"someLogGroupName"})
+	c.Assert(req.Form["LogStreamName"], DeepEquals, []string{"someLogStreamName"})
 }
